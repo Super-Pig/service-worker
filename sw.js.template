@@ -1,11 +1,12 @@
+const cacheKey = '{{pageName}}-{{version}}'
 
 // 把响应资源写入缓存
 // 只缓存 .js、.css 和图片文件
 const putInCache = async (request, response) => {
-  const cache = await caches.open('{{pageName}}-{{version}}')
+  const cache = await caches.open(cacheKey)
 
   if (
-    /\/{{pageName}}/.test(request.url) ||
+    new RegExp('/{{pageName}}').test(request.url) ||
     /\.(js|css|png|ico)/.test(request.url)
   ) {
     await cache.put(request, response)
@@ -15,10 +16,13 @@ const putInCache = async (request, response) => {
 // 清除旧缓存
 const deleteOldCaches = async () => {
   const keyList = await caches.keys()
+  const reg = new RegExp('^{{pageName}}-\\d{13}')
 
   await Promise.all(
     keyList.map(async (key) => {
-      await caches.delete(key)
+      if (reg.test(key) && !key.includes(cacheKey)) {
+        await caches.delete(key)
+      }
     })
   )
 }
@@ -68,3 +72,4 @@ self.addEventListener('fetch', (event) => {
     })
   )
 })
+
